@@ -5,7 +5,7 @@ const AWS = require('aws-sdk');
 
 // Configure AWS (make sure you have AWS CLI configured or environment variables set)
 const dynamodb = new AWS.DynamoDB.DocumentClient({
-    region: 'us-east-1' // Change to your preferred region
+    region: 'us-east-2' // Change to your preferred region
 });
 
 const TABLE_NAME = 'WeddingData';
@@ -114,7 +114,7 @@ async function getWeddingContent() {
 // Function to create the DynamoDB table (if it doesn't exist)
 async function createTable() {
     const dynamodbClient = new AWS.DynamoDB({
-        region: 'us-east-1' // Change to your preferred region
+        region: 'us-east-2' // Change to your preferred region
     });
     
     try {

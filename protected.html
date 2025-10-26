@@ -95,7 +95,7 @@
         }
         
         // Configuration - Update this with your actual API Gateway URL
-        const API_URL = 'https://qfp9pvx3b6.execute-api.us-east-2.amazonaws.com/prod';
+        const API_URL = 'https://qfp9pvx3b6.execute-api.us-east-2.amazonaws.com/prod/content';
         
         // Fetch protected content from AWS
         async function loadWeddingContent() {
@@ -110,7 +110,18 @@
                     body: JSON.stringify({ password: password })
                 });
                 
-                const data = await response.json();
+                // Handle network errors or no response
+                if (!response) {
+                    throw new Error('NETWORK_ERROR');
+                }
+                
+                let data;
+                try {
+                    data = await response.json();
+                } catch (parseError) {
+                    console.error('Failed to parse response:', parseError);
+                    throw new Error('INVALID_RESPONSE');
+                }
                 
                 if (response.ok && data.content) {
                     document.getElementById('loading').style.display = 'none';
@@ -122,26 +133,69 @@
                         lastUpdatedElement.style.display = 'block';
                     }
                 } else {
-                    throw new Error(data.error || 'Failed to load content');
+                    // Handle specific HTTP status codes
+                    if (response.status === 401) {
+                        throw new Error('INVALID_PASSWORD');
+                    } else if (response.status === 500) {
+                        throw new Error('SERVER_ERROR');
+                    } else if (response.status === 404) {
+                        throw new Error('API_NOT_FOUND');
+                    } else {
+                        throw new Error(data.error || 'UNKNOWN_ERROR');
+                    }
                 }
             } catch (error) {
                 console.error('Error loading content:', error);
                 document.getElementById('loading').style.display = 'none';
                 const errorElement = document.getElementById('error');
-                errorElement.textContent = 'Failed to load wedding details. Please try logging in again.';
+                
+                let errorMessage = '';
+                let shouldRedirect = false;
+                
+                // Provide specific error messages based on error type
+                if (error.message === 'INVALID_PASSWORD') {
+                    errorMessage = '❌ Incorrect password. Please try again.';
+                    shouldRedirect = true;
+                } else if (error.message === 'NETWORK_ERROR' || error.name === 'TypeError') {
+                    errorMessage = '🌐 Network error. Please check your internet connection and try again.';
+                } else if (error.message === 'SERVER_ERROR') {
+                    errorMessage = '⚠️ Server error. The wedding website is temporarily unavailable. Please try again in a few minutes.';
+                } else if (error.message === 'API_NOT_FOUND') {
+                    errorMessage = '🔧 Website configuration error. Please contact the website administrator.';
+                } else if (error.message === 'INVALID_RESPONSE') {
+                    errorMessage = '📡 Received invalid response from server. Please try again.';
+                } else {
+                    errorMessage = '❓ An unexpected error occurred. Please try logging in again.';
+                    shouldRedirect = true;
+                }
+                
+                errorElement.textContent = errorMessage;
                 errorElement.style.display = 'block';
                 
-                // Redirect to login after a delay
-                setTimeout(() => {
-                    logout();
-                }, 3000);
+                // Only redirect for authentication-related errors
+                if (shouldRedirect) {
+                    setTimeout(() => {
+                        if (error.message === 'INVALID_PASSWORD') {
+                            logout('invalid_password');
+                        } else {
+                            logout('auth_failed');
+                        }
+                    }, 4000);
+                }
             }
         }
         
-        function logout() {
+        function logout(reason = null) {
             sessionStorage.removeItem('authenticated');
             sessionStorage.removeItem('password');
-            window.location.href = 'index.html';
+            
+            if (reason === 'invalid_password') {
+                window.location.href = 'login.html?error=invalid_password';
+            } else if (reason === 'auth_failed') {
+                window.location.href = 'login.html?error=auth_failed';
+            } else {
+                window.location.href = 'index.html';
+            }
         }
         
         // Load content when page loads

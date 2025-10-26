@@ -74,11 +74,21 @@
         .back-link:hover {
             text-decoration: underline;
         }
+        .error-message {
+            color: #e53e3e;
+            background: #fed7d7;
+            padding: 0.75rem;
+            border-radius: 5px;
+            margin: 1rem 0;
+            text-align: center;
+            display: none;
+        }
     </style>
 </head>
 <body>
     <div class="login-container">
         <h1>Enter Password</h1>
+        <div id="errorMessage" class="error-message"></div>
         <form id="loginForm">
             <div class="form-group">
                 <label for="password">Password:</label>
@@ -90,9 +100,52 @@
     </div>
 
     <script>
+        // Check if user was redirected back due to an error
+        window.addEventListener('load', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const error = urlParams.get('error');
+            
+            if (error === 'invalid_password') {
+                showError('❌ The password you entered was incorrect. Please try again.');
+            } else if (error === 'auth_failed') {
+                showError('🔐 Authentication failed. Please enter the correct password.');
+            }
+            
+            // Clear any existing authentication data if redirected back
+            if (error) {
+                sessionStorage.removeItem('authenticated');
+                sessionStorage.removeItem('password');
+            }
+        });
+        
+        function showError(message) {
+            const errorElement = document.getElementById('errorMessage');
+            errorElement.textContent = message;
+            errorElement.style.display = 'block';
+            
+            // Focus on password field for better UX
+            document.getElementById('password').focus();
+        }
+        
+        function hideError() {
+            const errorElement = document.getElementById('errorMessage');
+            errorElement.style.display = 'none';
+        }
+        
+        // Hide error when user starts typing
+        document.getElementById('password').addEventListener('input', hideError);
+        
         document.getElementById('loginForm').addEventListener('submit', function(e) {
             e.preventDefault();
-            const password = document.getElementById('password').value;
+            const password = document.getElementById('password').value.trim();
+            
+            if (!password) {
+                showError('⚠️ Please enter a password.');
+                return;
+            }
+            
+            // Hide any existing errors
+            hideError();
             
             sessionStorage.setItem('password', password);
             sessionStorage.setItem('authenticated', 'true');
