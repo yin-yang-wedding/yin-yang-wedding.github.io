@@ -102,13 +102,20 @@
             const password = sessionStorage.getItem('password');
             
             try {
+                console.log('Attempting to fetch from:', API_URL);
+                
                 const response = await fetch(API_URL, {
                     method: 'POST',
                     headers: { 
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
                     },
-                    body: JSON.stringify({ password: password })
+                    body: JSON.stringify({ password: password }),
+                    mode: 'cors'
                 });
+                
+                console.log('Response status:', response.status);
+                console.log('Response headers:', response.headers);
                 
                 // Handle network errors or no response
                 if (!response) {
@@ -117,10 +124,20 @@
                 
                 let data;
                 try {
-                    data = await response.json();
+                    const responseText = await response.text();
+                    console.log('Raw response:', responseText);
+                    data = JSON.parse(responseText);
                 } catch (parseError) {
                     console.error('Failed to parse response:', parseError);
-                    throw new Error('INVALID_RESPONSE');
+                    console.error('Response status:', response.status);
+                    
+                    if (response.status === 502) {
+                        throw new Error('LAMBDA_ERROR');
+                    } else if (response.status >= 500) {
+                        throw new Error('SERVER_ERROR');
+                    } else {
+                        throw new Error('INVALID_RESPONSE');
+                    }
                 }
                 
                 if (response.ok && data.content) {
@@ -136,10 +153,14 @@
                     // Handle specific HTTP status codes
                     if (response.status === 401) {
                         throw new Error('INVALID_PASSWORD');
+                    } else if (response.status === 502) {
+                        throw new Error('LAMBDA_ERROR');
                     } else if (response.status === 500) {
                         throw new Error('SERVER_ERROR');
                     } else if (response.status === 404) {
                         throw new Error('API_NOT_FOUND');
+                    } else if (response.status === 403) {
+                        throw new Error('CORS_ERROR');
                     } else {
                         throw new Error(data.error || 'UNKNOWN_ERROR');
                     }
@@ -157,19 +178,23 @@
                     errorMessage = '❌ Incorrect password. Please try again.';
                     shouldRedirect = true;
                 } else if (error.message === 'NETWORK_ERROR' || error.name === 'TypeError') {
-                    errorMessage = '🌐 Network error. Please check your internet connection and try again.';
+                    errorMessage = '🌐 Connection failed. This could be due to:\n• Network connectivity issues\n• API server is down\n• CORS configuration problem\n\nPlease check your internet connection and try again in a few minutes.';
+                } else if (error.message === 'LAMBDA_ERROR') {
+                    errorMessage = '⚙️ Lambda function error (502). The AWS Lambda function may not be properly configured or deployed. Please check:\n• Lambda function is updated with latest code\n• Lambda function permissions\n• CloudWatch logs for errors';
+                } else if (error.message === 'CORS_ERROR') {
+                    errorMessage = '🚫 CORS error (403). The API Gateway may need CORS configuration. Please check:\n• API Gateway CORS settings\n• API Gateway deployment\n• Allowed origins and methods';
                 } else if (error.message === 'SERVER_ERROR') {
-                    errorMessage = '⚠️ Server error. The wedding website is temporarily unavailable. Please try again in a few minutes.';
+                    errorMessage = '⚠️ Server error (500). The wedding website backend is experiencing issues. Please try again in a few minutes.';
                 } else if (error.message === 'API_NOT_FOUND') {
-                    errorMessage = '🔧 Website configuration error. Please contact the website administrator.';
+                    errorMessage = '🔧 API endpoint not found (404). Please verify:\n• API Gateway URL is correct\n• Resource /content exists\n• API is deployed';
                 } else if (error.message === 'INVALID_RESPONSE') {
                     errorMessage = '📡 Received invalid response from server. Please try again.';
                 } else {
-                    errorMessage = '❓ An unexpected error occurred. Please try logging in again.';
+                    errorMessage = '❓ An unexpected error occurred. Please check the browser console for details and try logging in again.';
                     shouldRedirect = true;
                 }
                 
-                errorElement.textContent = errorMessage;
+                errorElement.innerHTML = errorMessage.replace(/\n/g, '<br>');
                 errorElement.style.display = 'block';
                 
                 // Only redirect for authentication-related errors
@@ -180,7 +205,7 @@
                         } else {
                             logout('auth_failed');
                         }
-                    }, 4000);
+                    }, 8000); // Extended time to read error message
                 }
             }
         }
