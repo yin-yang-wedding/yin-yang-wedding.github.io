@@ -160,6 +160,43 @@
         
         // Load content when page loads
         loadWeddingContent();
+        
+        // Wedding content interactive functions
+        function showTab(tabId) {
+            // Hide all tab content
+            const tabContents = document.querySelectorAll('.tab-content');
+            tabContents.forEach(content => content.classList.remove('active'));
+            
+            // Remove active class from all tab buttons
+            const tabButtons = document.querySelectorAll('.tab-button');
+            tabButtons.forEach(button => button.classList.remove('active'));
+            
+            // Show selected tab content
+            document.getElementById(tabId).classList.add('active');
+            
+            // Add active class to the corresponding button
+            const activeButton = Array.from(tabButtons).find(button => 
+                button.getAttribute('onclick').includes(tabId)
+            );
+            if (activeButton) {
+                activeButton.classList.add('active');
+            }
+        }
+        
+        function toggleSection(sectionId) {
+            const content = document.getElementById(sectionId + '-content');
+            const arrow = document.getElementById(sectionId + '-arrow');
+            
+            if (content.classList.contains('active')) {
+                content.classList.remove('active');
+                arrow.style.transform = 'rotate(0deg)';
+                arrow.textContent = '▼';
+            } else {
+                content.classList.add('active');
+                arrow.style.transform = 'rotate(180deg)';
+                arrow.textContent = '▲';
+            }
+        }
     </script>
 </body>
 </html>
