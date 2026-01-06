@@ -35,9 +35,19 @@
         // Configuration - Update this with your actual API Gateway URL
         const API_URL = 'https://qfp9pvx3b6.execute-api.us-east-2.amazonaws.com/prod/content';
         
+        // Local testing mode
+        const isLocalTesting = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:';
+        
         // Fetch protected content from AWS
         async function loadWeddingContent() {
             const password = sessionStorage.getItem('password');
+            
+            // Use local test content when testing locally
+            if (isLocalTesting) {
+                console.log('Local testing mode - loading test content');
+                loadLocalTestContent();
+                return;
+            }
             
             try {
                 console.log('Attempting to fetch from:', API_URL);
@@ -271,6 +281,90 @@
                 window.location.href = 'login.html?error=auth_failed';
             } else {
                 window.location.href = 'index.html';
+            }
+        }
+        
+        // Local testing function
+        async function loadLocalTestContent() {
+            const password = sessionStorage.getItem('password');
+            
+            try {
+                // Try to fetch test.html for local content, but get real photos from Lambda
+                const contentResponse = await fetch('test.html');
+                const content = await contentResponse.text();
+                
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('content').innerHTML = content;
+                
+                // Hide header elements when content loads successfully
+                document.querySelector('h1').style.display = 'none';
+                document.querySelector('.nav-links').style.display = 'none';
+                
+                // Get real photos from Lambda function
+                console.log('Local testing: Fetching real photos from Lambda...');
+                try {
+                    const photoResponse = await fetch(API_URL, {
+                        method: 'POST',
+                        headers: { 
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ password: password }),
+                        mode: 'cors'
+                    });
+                    
+                    if (photoResponse.ok) {
+                        const photoData = await photoResponse.json();
+                        if (photoData.photos && photoData.photos.length > 0) {
+                            setTimeout(() => {
+                                loadPhotos(photoData.photos);
+                            }, 1000);
+                        } else {
+                            setTimeout(() => {
+                                handleNoPhotos();
+                            }, 1000);
+                        }
+                    } else {
+                        console.log('Could not fetch photos from Lambda');
+                        setTimeout(() => {
+                            handleNoPhotos();
+                        }, 1000);
+                    }
+                } catch (photoError) {
+                    console.log('Error fetching photos:', photoError);
+                    setTimeout(() => {
+                        handleNoPhotos();
+                    }, 1000);
+                }
+                
+                const lastUpdatedElement = document.getElementById('lastUpdated');
+                lastUpdatedElement.textContent = `Last updated: ${new Date().toLocaleDateString()} (Local Test Mode with Real Photos)`;
+                lastUpdatedElement.style.display = 'block';
+                
+            } catch (error) {
+                // Fallback for file:// protocol or when test.html doesn't exist
+                console.log('Could not load test.html, using fallback content');
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('content').innerHTML = `
+                    <div style="text-align: center; padding: 3rem; background: #f9f9f9; border-radius: 8px; margin: 2rem 0;">
+                        <h2>Local Test Mode</h2>
+                        <p style="color: #666; margin-bottom: 1rem;">
+                            To see your actual wedding content and S3 photos locally:
+                        </p>
+                        <ol style="text-align: left; display: inline-block; margin-bottom: 2rem;">
+                            <li>Run a local server (e.g., <code>python -m http.server</code>)</li>
+                            <li>Make sure test.html exists in the same directory</li>
+                            <li>Deploy your Lambda function with S3 photo support</li>
+                            <li>Open protected.html through the server (not file://)</li>
+                        </ol>
+                        <p style="color: #666;">
+                            This will load test.html content with real S3 photos.
+                        </p>
+                    </div>
+                `;
+                
+                const lastUpdatedElement = document.getElementById('lastUpdated');
+                lastUpdatedElement.textContent = `Local Test Mode - ${new Date().toLocaleDateString()}`;
+                lastUpdatedElement.style.display = 'block';
             }
         }
         
