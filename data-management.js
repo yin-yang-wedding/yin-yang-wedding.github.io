@@ -15,6 +15,21 @@ const sampleWeddingContent = {
     id: 'main',
     content: `
         <div class="content-section">
+            <h2>Our Photos</h2>
+            <div id="photo-gallery">
+                <div id="photo-loading" style="text-align: center; padding: 2rem; color: #666;">
+                    Loading photos...
+                </div>
+                <div id="photo-grid" class="photo-grid landscape" style="display: none;">
+                    <!-- Photos will be loaded here dynamically -->
+                </div>
+                <div id="photo-error" style="display: none; text-align: center; padding: 2rem; color: #666;">
+                    Photos are temporarily unavailable. Please try refreshing the page.
+                </div>
+            </div>
+        </div>
+        
+        <div class="content-section">
             <h2>Ceremony Details</h2>
             <p><strong>Date:</strong> June 15, 2024</p>
             <p><strong>Time:</strong> 4:00 PM</p>
@@ -76,10 +91,10 @@ async function updateWeddingContent(content = sampleWeddingContent) {
         };
         
         await dynamodb.put(params).promise();
-        console.log('✅ Wedding content updated successfully!');
+        console.log('Wedding content updated successfully!');
         console.log('Last updated:', params.Item.lastUpdated);
     } catch (error) {
-        console.error('❌ Error updating wedding content:', error);
+        console.error('Error updating wedding content:', error);
     }
 }
 
@@ -94,7 +109,7 @@ async function getWeddingContent() {
         const result = await dynamodb.get(params).promise();
         
         if (result.Item) {
-            console.log('📄 Current wedding content:');
+            console.log('Current wedding content:');
             console.log('Last updated:', result.Item.lastUpdated);
             console.log('\nContent preview:');
             // Show first 200 characters of content
@@ -102,11 +117,11 @@ async function getWeddingContent() {
             console.log(preview + '...');
             return result.Item;
         } else {
-            console.log('❌ No wedding content found');
+            console.log('No wedding content found');
             return null;
         }
     } catch (error) {
-        console.error('❌ Error retrieving wedding content:', error);
+        console.error('Error retrieving wedding content:', error);
         return null;
     }
 }
@@ -136,18 +151,18 @@ async function createTable() {
         };
         
         await dynamodbClient.createTable(params).promise();
-        console.log('✅ Table created successfully!');
+        console.log('Table created successfully!');
         
         // Wait for table to be active
-        console.log('⏳ Waiting for table to be active...');
+        console.log('Waiting for table to be active...');
         await dynamodbClient.waitFor('tableExists', { TableName: TABLE_NAME }).promise();
-        console.log('✅ Table is now active!');
+        console.log('Table is now active!');
         
     } catch (error) {
         if (error.code === 'ResourceInUseException') {
-            console.log('ℹ️  Table already exists');
+            console.log('Table already exists');
         } else {
-            console.error('❌ Error creating table:', error);
+            console.error('Error creating table:', error);
         }
     }
 }
@@ -170,22 +185,22 @@ async function main() {
             break;
             
         case 'setup':
-            console.log('🚀 Setting up wedding data management...');
+            console.log('Setting up wedding data management...');
             await createTable();
             await updateWeddingContent();
-            console.log('✅ Setup complete!');
+            console.log('Setup complete!');
             break;
             
         default:
             console.log(`
-📋 Wedding Data Management Commands:
+Wedding Data Management Commands:
 
 node data-management.js setup          - Create table and add sample content
 node data-management.js create-table   - Create DynamoDB table only
 node data-management.js update         - Update wedding content with sample data
 node data-management.js get            - View current wedding content
 
-💡 Tips:
+Tips:
 - Make sure AWS CLI is configured with proper credentials
 - Update the region in this script if needed
 - Modify sampleWeddingContent object to customize your content

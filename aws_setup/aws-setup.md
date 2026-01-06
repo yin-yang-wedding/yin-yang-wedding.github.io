@@ -146,10 +146,10 @@ This setup uses AWS services to securely host wedding data while keeping the sou
 ## 9. Security Best Practices
 
 ### Implemented:
-- ✅ Password stored in AWS Secrets Manager
-- ✅ Wedding content stored in DynamoDB (not in source code)
-- ✅ CORS properly configured
-- ✅ Lambda function has minimal required permissions
+- Password stored in AWS Secrets Manager
+- Wedding content stored in DynamoDB (not in source code)
+- CORS properly configured
+- Lambda function has minimal required permissions
 
 ### Additional Recommendations:
 - **Rate Limiting**: Add AWS WAF to prevent brute force attacks

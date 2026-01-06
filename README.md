@@ -2,7 +2,7 @@
 
 A secure, password-protected wedding website with AWS backend hosting for sensitive data.
 
-## 🏗️ Architecture
+## Architecture
 
 This wedding website uses a secure architecture that keeps sensitive data in AWS while maintaining a public GitHub repository:
 
@@ -12,16 +12,16 @@ This wedding website uses a secure architecture that keeps sensitive data in AWS
 - **Data Storage**: AWS DynamoDB for wedding content + AWS Secrets Manager for passwords
 - **Security**: All sensitive information stored in AWS, not in source code
 
-## 🚀 Features
+## Features
 
-- ✅ **Password Protection**: Secure login system
-- ✅ **AWS Integration**: Core data hosted securely on AWS
-- ✅ **Public Source Code**: Repository can be public without exposing sensitive data
-- ✅ **Easy Content Management**: Update wedding details without touching code
-- ✅ **Responsive Design**: Works on all devices
-- ✅ **Cost Effective**: ~$5/month AWS costs for typical usage
+- **Password Protection**: Secure login system
+- **AWS Integration**: Core data hosted securely on AWS
+- **Public Source Code**: Repository can be public without exposing sensitive data
+- **Easy Content Management**: Update wedding details without touching code
+- **Responsive Design**: Works on all devices
+- **Cost Effective**: ~$5/month AWS costs for typical usage
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 ├── index.html              # Public landing page
@@ -33,7 +33,7 @@ This wedding website uses a secure architecture that keeps sensitive data in AWS
 └── README.md               # This file
 ```
 
-## 🛠️ Setup Instructions
+## Setup Instructions
 
 ### 1. Clone and Deploy Frontend
 
@@ -69,7 +69,7 @@ node data-management.js update
 node data-management.js get
 ```
 
-## 🔒 Security Features
+## Security Features
 
 - **Password Storage**: Passwords stored securely in AWS Secrets Manager
 - **Content Protection**: Wedding details stored in DynamoDB, not in source code
@@ -77,7 +77,7 @@ node data-management.js get
 - **CORS Protection**: Properly configured cross-origin resource sharing
 - **Minimal Permissions**: Lambda function has only required AWS permissions
 
-## 💰 Cost Breakdown
+## Cost Breakdown
 
 **Estimated monthly costs for typical wedding site usage:**
 
@@ -89,7 +89,7 @@ node data-management.js get
 | Secrets Manager | ~$0.40 | Per secret per month |
 | **Total** | **~$5.35** | Most services have generous free tiers |
 
-## 🎨 Customization
+## Customization
 
 ### Updating Wedding Content
 
@@ -116,14 +116,14 @@ Update the password in AWS Secrets Manager:
 3. Update the password value
 4. Save changes
 
-## 🧪 Testing
+## Testing
 
 1. Deploy your site to GitHub Pages
 2. Visit the site and test login functionality
 3. Check AWS CloudWatch logs for any errors
 4. Verify content loads correctly after authentication
 
-## 🔧 Troubleshooting
+## Troubleshooting
 
 ### Common Issues
 
@@ -142,7 +142,7 @@ aws lambda invoke --function-name wedding-content --payload '{"body":"{\"passwor
 aws dynamodb get-item --table-name WeddingData --key '{"id":{"S":"main"}}'
 ```
 
-## 📝 Development
+## Development
 
 ### Local Development
 
@@ -159,7 +159,7 @@ The architecture supports easy extension:
 - Create new DynamoDB tables for guest lists, RSVPs, etc.
 - Extend the frontend with new protected pages
 
-## 🤝 Contributing
+## Contributing
 
 1. Fork the repository
 2. Create a feature branch
@@ -167,11 +167,11 @@ The architecture supports easy extension:
 4. Test thoroughly
 5. Submit a pull request
 
-## 📄 License
+## License
 
 This project is open source and available under the [MIT License](LICENSE).
 
-## 💡 Why This Architecture?
+## Why This Architecture?
 
 This setup solves a common problem: wanting to share your wedding website code publicly while keeping sensitive information private. By using AWS for data storage and authentication, you get:
 
@@ -181,4 +181,4 @@ This setup solves a common problem: wanting to share your wedding website code p
 - **Cost-Effective**: Pay only for what you use
 - **Professional**: Enterprise-grade security and reliability
 
-Perfect for couples who want a beautiful, secure wedding website without compromising on privacy or breaking the bank! 💒✨
+Perfect for couples who want a beautiful, secure wedding website without compromising on privacy or breaking the bank!

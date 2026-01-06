@@ -27,9 +27,9 @@
             const error = urlParams.get('error');
             
             if (error === 'invalid_password') {
-                showError('❌ The password you entered was incorrect. Please try again.');
+                showError('The password you entered was incorrect. Please try again.');
             } else if (error === 'auth_failed') {
-                showError('🔐 Authentication failed. Please enter the correct password.');
+                showError('Authentication failed. Please enter the correct password.');
             }
             
             // Clear any existing authentication data if redirected back
@@ -61,7 +61,7 @@
             const password = document.getElementById('password').value.trim();
             
             if (!password) {
-                showError('⚠️ Please enter a password.');
+                showError('Please enter a password.');
                 return;
             }
             

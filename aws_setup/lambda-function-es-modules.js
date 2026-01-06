@@ -1,12 +1,15 @@
-// ES Modules version for AWS Lambda
+// ES Modules version for AWS Lambda with S3 Photo Support
 import { SecretsManagerClient, GetSecretValueCommand } from "@aws-sdk/client-secrets-manager";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, GetCommand } from "@aws-sdk/lib-dynamodb";
+import { S3Client, ListObjectsV2Command, GetObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 // Initialize AWS services with explicit region
 const secretsManagerClient = new SecretsManagerClient({ region: 'us-east-2' });
 const dynamoClient = new DynamoDBClient({ region: 'us-east-2' });
 const dynamodb = DynamoDBDocumentClient.from(dynamoClient);
+const s3Client = new S3Client({ region: 'us-east-2' });
 
 export const handler = async (event) => {
     const corsHeaders = {
@@ -154,12 +157,74 @@ export const handler = async (event) => {
             };
         }
         
+        // Fetch photos from S3
+        let photos = [];
+        try {
+            const bucketName = 'wedding-website-photos';
+            
+            // List objects in the S3 bucket
+            const listCommand = new ListObjectsV2Command({
+                Bucket: bucketName,
+                MaxKeys: 100 // Limit to 100 photos for performance
+            });
+            
+            const listResult = await s3Client.send(listCommand);
+            
+            if (listResult.Contents && listResult.Contents.length > 0) {
+                // Filter for image files and generate signed URLs
+                const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
+                const imageObjects = listResult.Contents.filter(obj => {
+                    const key = obj.Key.toLowerCase();
+                    return imageExtensions.some(ext => key.endsWith(ext));
+                });
+                
+                // Generate signed URLs for each image
+                photos = await Promise.all(
+                    imageObjects.map(async (obj) => {
+                        try {
+                            const getObjectCommand = new GetObjectCommand({
+                                Bucket: bucketName,
+                                Key: obj.Key
+                            });
+                            
+                            const signedUrl = await getSignedUrl(s3Client, getObjectCommand, {
+                                expiresIn: 3600 // URL expires in 1 hour
+                            });
+                            
+                            return {
+                                key: obj.Key,
+                                url: signedUrl,
+                                size: obj.Size,
+                                lastModified: obj.LastModified
+                            };
+                        } catch (urlError) {
+                            console.error(`Error generating signed URL for ${obj.Key}:`, urlError);
+                            return null;
+                        }
+                    })
+                );
+                
+                // Remove any null entries (failed URL generation)
+                photos = photos.filter(photo => photo !== null);
+                
+                // Sort photos by last modified date (newest first)
+                photos.sort((a, b) => new Date(b.lastModified) - new Date(a.lastModified));
+            }
+            
+        } catch (s3Error) {
+            console.error('Error fetching photos from S3:', s3Error);
+            // Don't fail the entire request if photos can't be loaded
+            // Just return empty photos array
+            photos = [];
+        }
+        
         return {
             statusCode: 200,
             headers: corsHeaders,
             body: JSON.stringify({ 
                 content: weddingData.Item.content,
-                lastUpdated: weddingData.Item.lastUpdated 
+                lastUpdated: weddingData.Item.lastUpdated,
+                photos: photos
             })
         };
         

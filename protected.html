@@ -20,6 +20,12 @@
         <div id="lastUpdated" class="last-updated" style="display: none;"></div>
     </div>
 
+    <!-- Photo Modal -->
+    <div id="photoModal" class="photo-modal" onclick="closePhotoModal()">
+        <span class="photo-modal-close" onclick="closePhotoModal()">&times;</span>
+        <img id="modalImage" src="" alt="Wedding Photo">
+    </div>
+
     <script>
         // Check if user is authenticated
         if (!sessionStorage.getItem('authenticated')) {
@@ -79,6 +85,13 @@
                     document.querySelector('h1').style.display = 'none';
                     document.querySelector('.nav-links').style.display = 'none';
                     
+                    // Load photos if available
+                    if (data.photos && data.photos.length > 0) {
+                        loadPhotos(data.photos);
+                    } else {
+                        handleNoPhotos();
+                    }
+                    
                     if (data.lastUpdated) {
                         const lastUpdatedElement = document.getElementById('lastUpdated');
                         lastUpdatedElement.textContent = `Last updated: ${new Date(data.lastUpdated).toLocaleDateString()}`;
@@ -110,22 +123,22 @@
                 
                 // Provide specific error messages based on error type
                 if (error.message === 'INVALID_PASSWORD') {
-                    errorMessage = '❌ Incorrect password. Please try again.';
+                    errorMessage = 'Incorrect password. Please try again.';
                     shouldRedirect = true;
                 } else if (error.message === 'NETWORK_ERROR' || error.name === 'TypeError') {
-                    errorMessage = '🌐 Connection failed. This could be due to:\n• Network connectivity issues\n• API server is down\n• CORS configuration problem\n\nPlease check your internet connection and try again in a few minutes.';
+                    errorMessage = 'Connection failed. This could be due to:\n• Network connectivity issues\n• API server is down\n• CORS configuration problem\n\nPlease check your internet connection and try again in a few minutes.';
                 } else if (error.message === 'LAMBDA_ERROR') {
-                    errorMessage = '⚙️ Lambda function error (502). The AWS Lambda function may not be properly configured or deployed. Please check:\n• Lambda function is updated with latest code\n• Lambda function permissions\n• CloudWatch logs for errors';
+                    errorMessage = 'Lambda function error (502). The AWS Lambda function may not be properly configured or deployed. Please check:\n• Lambda function is updated with latest code\n• Lambda function permissions\n• CloudWatch logs for errors';
                 } else if (error.message === 'CORS_ERROR') {
-                    errorMessage = '🚫 CORS error (403). The API Gateway may need CORS configuration. Please check:\n• API Gateway CORS settings\n• API Gateway deployment\n• Allowed origins and methods';
+                    errorMessage = 'CORS error (403). The API Gateway may need CORS configuration. Please check:\n• API Gateway CORS settings\n• API Gateway deployment\n• Allowed origins and methods';
                 } else if (error.message === 'SERVER_ERROR') {
-                    errorMessage = '⚠️ Server error (500). The wedding website backend is experiencing issues. Please try again in a few minutes.';
+                    errorMessage = 'Server error (500). The wedding website backend is experiencing issues. Please try again in a few minutes.';
                 } else if (error.message === 'API_NOT_FOUND') {
-                    errorMessage = '🔧 API endpoint not found (404). Please verify:\n• API Gateway URL is correct\n• Resource /content exists\n• API is deployed';
+                    errorMessage = 'API endpoint not found (404). Please verify:\n• API Gateway URL is correct\n• Resource /content exists\n• API is deployed';
                 } else if (error.message === 'INVALID_RESPONSE') {
-                    errorMessage = '📡 Received invalid response from server. Please try again.';
+                    errorMessage = 'Received invalid response from server. Please try again.';
                 } else {
-                    errorMessage = '❓ An unexpected error occurred. Please check the browser console for details and try logging in again.';
+                    errorMessage = 'An unexpected error occurred. Please check the browser console for details and try logging in again.';
                     shouldRedirect = true;
                 }
                 
@@ -144,6 +157,109 @@
                 }
             }
         }
+        
+        // Photo gallery functions
+        function loadPhotos(photos) {
+            const photoGrid = document.getElementById('photo-grid');
+            const photoLoading = document.getElementById('photo-loading');
+            const photoError = document.getElementById('photo-error');
+            
+            if (!photoGrid) {
+                console.warn('Photo grid element not found');
+                return;
+            }
+            
+            photoLoading.style.display = 'none';
+            photoError.style.display = 'none';
+            
+            // Clear existing content
+            photoGrid.innerHTML = '';
+            
+            photos.forEach((photo, index) => {
+                const photoItem = document.createElement('div');
+                photoItem.className = 'photo-item';
+                
+                // Create loading placeholder first
+                const loadingPlaceholder = document.createElement('div');
+                loadingPlaceholder.className = 'photo-loading-placeholder';
+                photoItem.appendChild(loadingPlaceholder);
+                
+                // Create and load the actual image
+                const img = document.createElement('img');
+                img.src = photo.url;
+                img.alt = `Wedding photo ${index + 1}`;
+                img.style.display = 'none'; // Hide until loaded
+                
+                img.onload = function() {
+                    loadingPlaceholder.remove();
+                    img.style.display = 'block';
+                };
+                
+                img.onerror = function() {
+                    loadingPlaceholder.innerHTML = 'Photo unavailable';
+                    loadingPlaceholder.style.backgroundColor = '#f0f0f0';
+                    loadingPlaceholder.style.color = '#999';
+                    loadingPlaceholder.style.textAlign = 'center';
+                    loadingPlaceholder.style.display = 'flex';
+                    loadingPlaceholder.style.flexDirection = 'column';
+                    loadingPlaceholder.style.alignItems = 'center';
+                    loadingPlaceholder.style.justifyContent = 'center';
+                };
+                
+                // Add click event to open modal
+                photoItem.addEventListener('click', () => openPhotoModal(photo.url, photo.key));
+                
+                photoItem.appendChild(img);
+                photoGrid.appendChild(photoItem);
+            });
+            
+            // Show photo count
+            const photoCount = document.createElement('div');
+            photoCount.className = 'photo-count';
+            photoCount.textContent = `${photos.length} ${photos.length === 1 ? 'photo' : 'photos'}`;
+            photoGrid.parentElement.appendChild(photoCount);
+            
+            photoGrid.style.display = 'grid';
+        }
+        
+        function handleNoPhotos() {
+            const photoGrid = document.getElementById('photo-grid');
+            const photoLoading = document.getElementById('photo-loading');
+            const photoError = document.getElementById('photo-error');
+            
+            if (!photoGrid) return;
+            
+            photoLoading.style.display = 'none';
+            photoError.textContent = 'No photos available at the moment. Check back soon!';
+            photoError.style.display = 'block';
+        }
+        
+        function openPhotoModal(imageUrl, imageName) {
+            const modal = document.getElementById('photoModal');
+            const modalImage = document.getElementById('modalImage');
+            
+            modalImage.src = imageUrl;
+            modalImage.alt = imageName || 'Wedding Photo';
+            modal.classList.add('active');
+            
+            // Prevent body scroll when modal is open
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closePhotoModal() {
+            const modal = document.getElementById('photoModal');
+            modal.classList.remove('active');
+            
+            // Restore body scroll
+            document.body.style.overflow = '';
+        }
+        
+        // Close modal with Escape key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closePhotoModal();
+            }
+        });
         
         function logout(reason = null) {
             sessionStorage.removeItem('authenticated');
