@@ -173,23 +173,50 @@
             }
         }
         
-        // Photo gallery functions
-        function loadPhotos(photos) {
-            const photoGrid = document.getElementById('photo-grid');
-            const photoLoading = document.getElementById('photo-loading');
-            const photoError = document.getElementById('photo-error');
+        // Global variables to store photo sorting state
+        let originalPhotos = [];
+        let currentPhotos = [];
+
+        // Photo sorting functionality
+        function sortPhotos(sortType) {
+            if (!currentPhotos.length) return;
             
-            if (!photoGrid) {
-                console.warn('Photo grid element not found');
-                return;
+            let sortedPhotos = [...currentPhotos];
+            
+            switch (sortType) {
+                case 'alphabetical':
+                    sortedPhotos.sort((a, b) => {
+                        const aName = a.key || a.url || '';
+                        const bName = b.key || b.url || '';
+                        return aName.toLowerCase().localeCompare(bName.toLowerCase());
+                    });
+                    break;
+                case 'reverse-alphabetical':
+                    sortedPhotos.sort((a, b) => {
+                        const aName = a.key || a.url || '';
+                        const bName = b.key || b.url || '';
+                        return bName.toLowerCase().localeCompare(aName.toLowerCase());
+                    });
+                    break;
+                case 'default':
+                default:
+                    sortedPhotos = [...originalPhotos];
+                    break;
             }
             
-            photoLoading.style.display = 'none';
-            photoError.style.display = 'none';
+            // Re-render the photos with new order
+            displayPhotos(sortedPhotos);
+        }
+
+        // Function to display photos in the grid with fast loading
+        function displayPhotos(photos) {
+            const photoGrid = document.getElementById('photo-grid');
+            if (!photoGrid) return;
             
             // Clear existing content
             photoGrid.innerHTML = '';
             
+            // Load all photos immediately with optimizations
             photos.forEach((photo, index) => {
                 const photoItem = document.createElement('div');
                 photoItem.className = 'photo-item';
@@ -199,26 +226,43 @@
                 loadingPlaceholder.className = 'photo-loading-placeholder';
                 photoItem.appendChild(loadingPlaceholder);
                 
-                // Create and load the actual image
+                // Create and load the actual image with optimization
                 const img = document.createElement('img');
+                
+                // Only use lazy loading for images beyond the first 6 (above the fold)
+                if (index > 5) {
+                    img.loading = 'lazy';
+                } else {
+                    img.loading = 'eager'; // Load first 6 immediately
+                }
+                
                 img.src = photo.url;
                 img.alt = `Wedding photo ${index + 1}`;
-                img.style.display = 'none'; // Hide until loaded
+                img.style.display = 'none';
+                img.decoding = 'async'; // Async decoding for better performance
+                
+                let imageLoaded = false;
                 
                 img.onload = function() {
-                    loadingPlaceholder.remove();
-                    img.style.display = 'block';
+                    if (!imageLoaded) {
+                        imageLoaded = true;
+                        loadingPlaceholder.remove();
+                        img.style.display = 'block';
+                    }
                 };
                 
                 img.onerror = function() {
-                    loadingPlaceholder.innerHTML = 'Photo unavailable';
-                    loadingPlaceholder.style.backgroundColor = '#f0f0f0';
-                    loadingPlaceholder.style.color = '#999';
-                    loadingPlaceholder.style.textAlign = 'center';
-                    loadingPlaceholder.style.display = 'flex';
-                    loadingPlaceholder.style.flexDirection = 'column';
-                    loadingPlaceholder.style.alignItems = 'center';
-                    loadingPlaceholder.style.justifyContent = 'center';
+                    if (!imageLoaded) {
+                        imageLoaded = true;
+                        loadingPlaceholder.innerHTML = 'Photo unavailable';
+                        loadingPlaceholder.style.backgroundColor = '#f0f0f0';
+                        loadingPlaceholder.style.color = '#999';
+                        loadingPlaceholder.style.textAlign = 'center';
+                        loadingPlaceholder.style.display = 'flex';
+                        loadingPlaceholder.style.flexDirection = 'column';
+                        loadingPlaceholder.style.alignItems = 'center';
+                        loadingPlaceholder.style.justifyContent = 'center';
+                    }
                 };
                 
                 // Add click event to open modal
@@ -228,13 +272,41 @@
                 photoGrid.appendChild(photoItem);
             });
             
-            // Show photo count
+            // Update photo count
+            const existingCount = photoGrid.parentElement.querySelector('.photo-count');
+            if (existingCount) {
+                existingCount.remove();
+            }
+            
             const photoCount = document.createElement('div');
             photoCount.className = 'photo-count';
             photoCount.textContent = `${photos.length} ${photos.length === 1 ? 'photo' : 'photos'}`;
             photoGrid.parentElement.appendChild(photoCount);
             
             photoGrid.style.display = 'grid';
+        }
+
+        // Enhanced loadPhotos function with sorting capability
+        function loadPhotos(photos) {
+            // Store original photo order
+            originalPhotos = [...photos];
+            currentPhotos = [...photos];
+            
+            const photoLoading = document.getElementById('photo-loading');
+            const photoError = document.getElementById('photo-error');
+            
+            if (photoLoading) photoLoading.style.display = 'none';
+            if (photoError) photoError.style.display = 'none';
+            
+            // Sort photos in reverse alphabetical order by default
+            const sortedPhotos = [...photos].sort((a, b) => {
+                const aName = a.key || a.url || '';
+                const bName = b.key || b.url || '';
+                return bName.toLowerCase().localeCompare(aName.toLowerCase());
+            });
+            
+            // Display photos with reverse alphabetical order
+            displayPhotos(sortedPhotos);
         }
         
         function handleNoPhotos() {
