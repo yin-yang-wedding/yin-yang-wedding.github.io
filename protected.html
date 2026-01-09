@@ -132,11 +132,11 @@
                         handleNoPhotos();
                     }
                     
-                    if (data.lastUpdated) {
-                        const lastUpdatedElement = document.getElementById('lastUpdated');
-                        lastUpdatedElement.textContent = `Last updated: ${new Date(data.lastUpdated).toLocaleDateString()}`;
-                        lastUpdatedElement.style.display = 'block';
-                    }
+                    // if (data.lastUpdated) {
+                        // const lastUpdatedElement = document.getElementById('lastUpdated');
+                        // lastUpdatedElement.textContent = `Last updated: ${new Date(data.lastUpdated).toLocaleDateString()}`;
+                        // lastUpdatedElement.style.display = 'block';
+                    // }
                 } else {
                     // Handle specific HTTP status codes
                     if (response.status === 401) {
