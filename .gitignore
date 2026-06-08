@@ -1,0 +1,9 @@
+# Local-only files — contain or render private wedding content. Never commit.
+do-not-upload-commit.html
+family-content-do-not-upload-commit.html
+preview-do-not-commit.html
+test.html
+test_family.html
+
+# Claude Code local files
+.claude/

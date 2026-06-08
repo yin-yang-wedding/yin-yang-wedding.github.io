@@ -391,8 +391,8 @@
             const password = sessionStorage.getItem('password');
             
             try {
-                // Try to fetch test.html for local content, but get real photos from Lambda
-                const contentResponse = await fetch('test.html');
+                // Try to fetch do-not-upload-commit.html for local content, but get real photos from Lambda
+                const contentResponse = await fetch('do-not-upload-commit.html');
                 const content = await contentResponse.text();
                 
                 document.getElementById('loading').style.display = 'none';
@@ -443,8 +443,8 @@
                 lastUpdatedElement.style.display = 'block';
                 
             } catch (error) {
-                // Fallback for file:// protocol or when test.html doesn't exist
-                console.log('Could not load test.html, using fallback content');
+                // Fallback for file:// protocol or when do-not-upload-commit.html doesn't exist
+                console.log('Could not load do-not-upload-commit.html, using fallback content');
                 document.getElementById('loading').style.display = 'none';
                 document.getElementById('content').innerHTML = `
                     <div style="text-align: center; padding: 3rem; background: #f9f9f9; border-radius: 8px; margin: 2rem 0;">
@@ -454,12 +454,12 @@
                         </p>
                         <ol style="text-align: left; display: inline-block; margin-bottom: 2rem;">
                             <li>Run a local server (e.g., <code>python -m http.server</code>)</li>
-                            <li>Make sure test.html exists in the same directory</li>
+                            <li>Make sure do-not-upload-commit.html exists in the same directory</li>
                             <li>Deploy your Lambda function with S3 photo support</li>
                             <li>Open protected.html through the server (not file://)</li>
                         </ol>
                         <p style="color: #666;">
-                            This will load test.html content with real S3 photos.
+                            This will load do-not-upload-commit.html content with real S3 photos.
                         </p>
                     </div>
                 `;
